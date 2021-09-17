@@ -18,4 +18,4 @@
 #  along with ognjaD.  If not, see <https://www.gnu.org/licenses/>.            *
 # ******************************************************************************
 
-from .version import VersionAttrPlaceholder, Version, make_class, RVP
+from .version import VersionAttrPlaceholder, Version, make_class, VersionModelPlacepolder

@@ -21,6 +21,9 @@ work with "little-to-no" configuring and changes to Django project.
    - timestamp
    - serialized version
    - hash
+ - object version may be serialized as:
+   - diff with previous version _(by default)_
+   - raw dumps
 
 ### Usage example
 
@@ -67,7 +70,9 @@ As there is no package at time you can:
 
 ### Configuring
 
-To register your model as eligible for versioning add property `_versioning = True` to model class definition.
+To register your model as eligible for versioning add property-class `VersioningMeta` to model class definition.
+
+Then set preferred options.
 
 e.g:
 
@@ -78,12 +83,18 @@ from django.db import models
 
 class Question(models.Model):
     
-    @property
-    def _versioned(self):
-        return True
+    class VersioningMeta:
+        store_diff = False
 
     ... # fields' definitions
 ```
+
+#### `VersioningMeta` options
+
+| Name          | Description                                                             | Type    | Default |
+|---------------|-------------------------------------------------------------------------|---------|---------|
+| `enabled`     | `True`: if model will be versioned <br> `False`: if will not            | `bool`  | `True`  |
+| `store_diff`  | `True`: model's history will be stored as diffs <br> `False`: as dumps  | `bool`  | `True`  |
 
 ## Authors
 

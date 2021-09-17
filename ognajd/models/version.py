@@ -28,9 +28,17 @@ from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
+import jsondiff as jd
+
+from ..src.exceptions import VersioningError
 
 
 class Version(models.Model):
+    """Abstract class to prototype VersionModel.
+
+    His child will be defined at runtime in OgnajdConfig.ready().
+    """
+
     class Meta:
         abstract = True
 
@@ -87,23 +95,93 @@ class Version(models.Model):
 
     objects = models.Manager()
 
+    @property
+    def versioning_meta(self):
+        """Returns versioning metadata for related model."""
+
+        versioned_model = self.content_type.model_class()
+        versioning_meta = getattr(versioned_model, 'VersioningMeta', None)
+
+        if not versioning_meta:
+            raise VersioningError(f'VersioningMeta is not defined for model {versioned_model}, restart required')
+
+        return versioning_meta
+
+    def get_version_dump(self) -> dict:
+        """Form related object's dump in respect to instanced version.
+
+        Method gets first diff (a.k.a initial dump) and patches all remaining prior to
+        instanced version (inclusively). It must not be called at unsaved version
+        instances.
+        If related object configured to store dumps, not diffs — returns dump.
+
+        :return: related object's dump
+        :rtype: dict[Any]
+        """
+
+        # if model not save — vurrent version is unavailable
+        if self._state.adding:
+            raise VersioningError(f'get_dump() can not be called at unsaved instance')
+
+        if not getattr(self.versioning_meta, 'store_diff', True):
+            return self.dump
+
+        # collect all diffs prior to instanced version
+        diffs = tuple(
+            VersionModelPlacepolder['version']
+            .objects.filter(
+                content_type=self.content_type,
+                index__lte=self.index,
+            ).order_by('index').values_list('dump', flat=True))
+
+        # initial dump
+        dump = diffs[0]
+
+        # if there is only one diff — return initial dump
+        if len(diffs) < 2:
+            return dump
+
+        # patch dump for every diff consecutively
+        for diff in diffs[1:]:
+            dump = jd.patch(dump, diff)
+
+        return dump
+
     def save(self, *args, **kwargs):
+
+        latest_version = VersionModelPlacepolder['version'].objects.filter(content_type=self.content_type) \
+            .order_by('-index').first()
         self.hash = hashlib.md5(json.dumps(self.dump).encode('utf-8')).hexdigest()
 
-        # index incrementer — credit to `tinfoilboy` @ https://stackoverflow.com/a/41230517
-        if self._state.adding:
-            last_index = RVP['version'].objects.all().aggregate(largest=models.Max('index'))['largest']
-            if last_index is not None:
-                self.index = last_index + 1
+        # If there is at least one version
+        if latest_version:
+
+            # If we need to store diff
+            if getattr(self.versioning_meta, 'store_diff', True):
+
+                # If there were no changes — do not run jsondiff.diff(...), it is not required
+                if self.hash == latest_version.hash:
+                    self.dump = {}
+                else:
+                    self.dump = jd.diff(latest_version.get_version_dump(), self.dump)
+
+            # increment version index
+            self.index = latest_version.index + 1
 
         super(Version, self).save(*args, **kwargs)
 
 
 class VersionAttrPlaceholder:
+    """Placeholder base class to store dynamicc attributes.
+
+    Attributes (mostly, methods), that will be generated at OgnajdConfig.ready() are
+    bound to this class.
+    """
+
     pass
 
 
-RVP = {}
+VersionModelPlacepolder = {}
 
 
 def make_class():
@@ -114,4 +192,8 @@ def make_class():
             ns['__module__'] = __name__
             ns['__qualname__'] = 'Version'
 
-    RVP['version'] = types.new_class('Version', bases=(Version,), exec_body=copy_placeholder_methods)
+    VersionModelPlacepolder['version'] = types.new_class(
+        'Version',
+        bases=(Version,),
+        exec_body=copy_placeholder_methods
+    )
