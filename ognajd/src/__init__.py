@@ -1,6 +1,6 @@
 # ******************************************************************************
 #  ognajD — Django app which handles ORM objects' versions.                    *
-#  Copyright (C) 2021-2021 omelched                                            *
+#  Copyright (C) 2021 omelched                                                 *
 #                                                                              *
 #  This file is part of ognjaD.                                                *
 #                                                                              *
@@ -17,5 +17,3 @@
 #  You should have received a copy of the GNU Affero General Public License    *
 #  along with ognjaD.  If not, see <https://www.gnu.org/licenses/>.            *
 # ******************************************************************************
-
-from .version import VersionAttrPlaceholder, Version, make_class, VersionModelPlacepolder

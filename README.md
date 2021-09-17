@@ -1,6 +1,3 @@
-
- 
-
 # ognajD<sup><sup>_v0.1.0_</sup></sup>
 
 Django app which handles ORM objects' versions.
@@ -21,6 +18,9 @@ work with "little-to-no" configuring and changes to Django project.
    - timestamp
    - serialized version
    - hash
+ - object version may be serialized as:
+   - diff with previous version _(by default)_
+   - raw dumps
 
 ### Usage example
 
@@ -43,7 +43,33 @@ production due to exposed `SECRET_KEY`.
 
 ### Installing
 
-As there is no package at time you can:
+#### Using Python Package Index
+
+* make sure to use latest `pip`:
+  ```shell
+  python3 -m pip install --upgrade pip
+  ```
+
+* install `django-ognajd`:
+  ```shell
+  python3 -m pip install django-ognajd
+  ```
+  
+#### OR download package from releases
+
+* download release asset (`.tar.gz` or `.whl`)
+
+* make sure to use latest `pip`:
+  ```shell
+  python3 -m pip install --upgrade pip
+  ```
+
+* install `django-ognajd` from file:
+  ```shell
+  python3 -m pip install /path/to/downloaded/asset.tar.gz # or .whl
+  ```
+
+#### OR clone from repository 
 
 * clone project:
   ```shell
@@ -67,7 +93,21 @@ As there is no package at time you can:
 
 ### Configuring
 
-To register your model as eligible for versioning add property `_versioning = True` to model class definition.
+#### Installing application
+
+Add `ognajd` to `INSTALLED_APPS` in your Django project `settings.py`.
+
+If you installed package [the third way](#or-clone-from-repository) make sure that `</path/to/django/project/apps>`
+is added to `PYTHONPATH`. If you not sure add code below in your Django project `manage.py` before calling `main()`:
+```python
+  sys.path.append('</path/to/django/project/apps>')
+```
+
+#### Registering models
+
+To register your model as eligible for versioning add property-class `VersioningMeta` to model class definition.
+
+Then set preferred options.
 
 e.g:
 
@@ -78,12 +118,18 @@ from django.db import models
 
 class Question(models.Model):
     
-    @property
-    def _versioned(self):
-        return True
+    class VersioningMeta:
+        store_diff = False
 
     ... # fields' definitions
 ```
+
+#### `VersioningMeta` options
+
+| Name          | Description                                                             | Type    | Default |
+|---------------|-------------------------------------------------------------------------|---------|---------|
+| `enabled`     | `True`: if model will be versioned <br> `False`: if will not            | `bool`  | `True`  |
+| `store_diff`  | `True`: model's history will be stored as diffs <br> `False`: as dumps  | `bool`  | `True`  |
 
 ## Authors
 
