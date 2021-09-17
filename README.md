@@ -1,6 +1,3 @@
-
- 
-
 # ognajD<sup><sup>_v0.1.0_</sup></sup>
 
 Django app which handles ORM objects' versions.
@@ -46,7 +43,33 @@ production due to exposed `SECRET_KEY`.
 
 ### Installing
 
-As there is no package at time you can:
+#### Using Python Package Index
+
+* make sure to use latest `pip`:
+  ```shell
+  python3 -m pip install --upgrade pip
+  ```
+
+* install `django-ognajd`:
+  ```shell
+  python3 -m pip install django-ognajd
+  ```
+  
+#### OR download package from releases
+
+* download release asset (`.tar.gz` or `.whl`)
+
+* make sure to use latest `pip`:
+  ```shell
+  python3 -m pip install --upgrade pip
+  ```
+
+* install `django-ognajd` from file:
+  ```shell
+  python3 -m pip install /path/to/downloaded/asset.tar.gz # or .whl
+  ```
+
+#### OR clone from repository 
 
 * clone project:
   ```shell
@@ -69,6 +92,18 @@ As there is no package at time you can:
   ```
 
 ### Configuring
+
+#### Installing application
+
+Add `ognajd` to `INSTALLED_APPS` in your Django project `settings.py`.
+
+If you installed package [the third way](#or-clone-from-repository) make sure that `</path/to/django/project/apps>`
+is added to `PYTHONPATH`. If you not sure add code below in your Django project `manage.py` before calling `main()`:
+```python
+  sys.path.append('</path/to/django/project/apps>')
+```
+
+#### Registering models
 
 To register your model as eligible for versioning add property-class `VersioningMeta` to model class definition.
 
