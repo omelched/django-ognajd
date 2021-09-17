@@ -1,4 +1,4 @@
-# ognajD<sup><sup>_v0.1.0_</sup></sup>
+# ognajD<sup><sup>_v0.1.1_</sup></sup>
 
 Django app which handles ORM objects' versions.
 
@@ -11,7 +11,7 @@ work with "little-to-no" configuring and changes to Django project.
 ### Features
 **ognajd** stores objects' versions in own table, relied on `contenttypes` application.
 
-**ognajD** @ [v0.1.0](https://github.com/omelched/django-ognajd/releases/tag/v0.1.0) can:
+**ognajD** @ [v0.1.1](https://github.com/omelched/django-ognajd/releases/tag/v0.1.1) can:
 
  - catch object's save / update signals
  - store snapshot of object in DB with:
