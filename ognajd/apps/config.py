@@ -18,6 +18,7 @@
 #  along with ognjaD.  If not, see <https://www.gnu.org/licenses/>.            *
 # ******************************************************************************
 
+import json
 import types
 
 from django.apps import AppConfig
@@ -32,19 +33,24 @@ class OgnajdConfig(AppConfig):
 
     def ready(self):
 
-        from ..models import VersionAttrPlaceholder, make_class, RVP
+        from ..models import VersionAttrPlaceholder, make_class, VersionModelPlacepolder
 
         for versioned_model in [model
                                 for app in self.apps.app_configs.values()
                                 for model in app.models.values()
-                                if hasattr(model, '_versioned') and getattr(model, '_versioned')]:
+                                if hasattr(model, 'VersioningMeta')]:
+            if not getattr(versioned_model, 'enable', True):
+                # VersioningMeta exists but not enabled, no versioning required
+                continue
 
             # noinspection PyUnusedLocal
             @receiver(post_save, sender=versioned_model)
             def receiver_func(sender, instance, created, **kwargs):
-                RVP['version'].objects.create(
+                dump = json.loads(serializers.serialize('json', [instance]))[0]['fields']
+
+                VersionModelPlacepolder['version'].objects.create(
                     ref=instance,
-                    dump=serializers.serialize('json', [instance])
+                    dump=dump
                 )
 
             # noinspection PyProtectedMember

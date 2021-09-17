@@ -6,9 +6,10 @@ from django.utils import timezone
 
 class Question(models.Model):
     # As of today no way to add custom Meta to model (https://code.djangoproject.com/ticket/5793)
-    @property
-    def _versioned(self):
-        return True
+    # thus create own storage for configuration
+    class VersioningMeta:
+        enable = True
+        store_diff = True
 
     question_text = models.CharField(max_length=200)
     pub_date = models.DateTimeField('date published')
@@ -26,7 +27,7 @@ class Question(models.Model):
 
 
 class Choice(models.Model):
-    question = models.ForeignKey(Question, on_delete=models.CASCADE)
+    question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='choises')
     choice_text = models.CharField(max_length=200)
     votes = models.IntegerField(default=0)
 
