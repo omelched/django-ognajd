@@ -23,6 +23,7 @@ import types
 import uuid
 import hashlib
 import inspect
+from functools import cached_property
 
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
@@ -95,7 +96,7 @@ class Version(models.Model):
 
     objects = models.Manager()
 
-    @property
+    @cached_property
     def versioning_meta(self):
         """Returns versioning metadata for related model."""
 
@@ -119,11 +120,11 @@ class Version(models.Model):
         :rtype: dict[Any]
         """
 
-        # if model not save — vurrent version is unavailable
+        # if model not saved — current version is unavailable
         if self._state.adding:
             raise VersioningError(f'get_dump() can not be called at unsaved instance')
 
-        if not getattr(self.versioning_meta, 'store_diff', True):
+        if not getattr(self.versioning_meta, 'store_diff'):
             return self.dump
 
         # collect all diffs prior to instanced version
@@ -156,11 +157,20 @@ class Version(models.Model):
         # If there is at least one version
         if latest_version:
 
-            # If we need to store diff
-            if getattr(self.versioning_meta, 'store_diff', True):
+            no_changes = self.hash == latest_version.hash
 
-                # If there were no changes — do not run jsondiff.diff(...), it is not required
-                if self.hash == latest_version.hash:
+            # if there is no changes (a.k.a. equal hash)
+            if no_changes:
+
+                # and we do not need to save versions with no changes — abort saving
+                if not getattr(self.versioning_meta, 'save_empty_changes'):
+                    return
+
+            # If we need to store diff
+            if getattr(self.versioning_meta, 'store_diff'):
+
+                # and there were no changes — do not run jsondiff.diff(...)
+                if no_changes:
                     self.dump = {}
                 else:
                     self.dump = jd.diff(latest_version.get_version_dump(), self.dump)
