@@ -1,4 +1,4 @@
-# ognajD<sup><sup>_v0.1.1_</sup></sup>
+# ognajD<sup><sup>_v0.1.2_</sup></sup>
 
 Django app which handles ORM objects' versions.
 
@@ -11,14 +11,14 @@ work with "little-to-no" configuring and changes to Django project.
 ### Features
 **ognajd** stores objects' versions in own table, relied on `contenttypes` application.
 
-**ognajD** @ [v0.1.1](https://github.com/omelched/django-ognajd/releases/tag/v0.1.1) can:
+**ognajD** @ [v0.1.2](https://github.com/omelched/django-ognajd/releases/tag/v0.1.2) can:
 
  - catch object's save / update signals
  - store snapshot of object in DB with:
    - timestamp
    - serialized version
    - hash
- - object version may be serialized as:
+ - object version may be serialized (currently, only JSON) as:
    - diff with previous version _(by default)_
    - raw dumps
 
@@ -35,7 +35,8 @@ production due to exposed `SECRET_KEY`.
 
 #### Python packages
 
-* `django~=3.2.7` <sub>might work on lesser versions, never tested</sub>
+* `django~=3.2.7` <sub><sub>might work on lesser versions, not tested</sub></sub>
+* `jsondiff~=1.3.0` <sub><sub>might work on lesser versions, not tested</sub></sub>
 
 #### Django applications
 
@@ -105,7 +106,8 @@ is added to `PYTHONPATH`. If you not sure add code below in your Django project 
 
 #### Registering models
 
-To register your model as eligible for versioning add property-class `VersioningMeta` to model class definition.
+To register your model as eligible for versioning add attribute-class `VersioningMeta` to model class definition.
+For typing, linters, autocompletion tyou can inherit from `ognajd.models.VersioningMeta`.
 
 Then set preferred options.
 
@@ -116,9 +118,12 @@ e.g:
 
 from django.db import models
 
+from ognajd.models import VersioningMeta
+
+
 class Question(models.Model):
     
-    class VersioningMeta:
+    class VersioningMeta(VersioningMeta):
         store_diff = False
 
     ... # fields' definitions
@@ -126,10 +131,11 @@ class Question(models.Model):
 
 #### `VersioningMeta` options
 
-| Name          | Description                                                             | Type    | Default |
-|---------------|-------------------------------------------------------------------------|---------|---------|
-| `enabled`     | `True`: if model will be versioned <br> `False`: if will not            | `bool`  | `True`  |
-| `store_diff`  | `True`: model's history will be stored as diffs <br> `False`: as dumps  | `bool`  | `True`  |
+| Name                  | Description                                                             | Type    | Default |
+|-----------------------|-------------------------------------------------------------------------|---------|---------|
+| `enabled`             | `True`: if model will be versioned <br> `False`: if will not            | `bool`  | `True`  |
+| `store_diff`          | `True`: model's history will be stored as diffs <br> `False`: as dumps  | `bool`  | `True`  |
+| `save_empty_changes`  | `True`: if empty changes will be registered <br> `False`:  if will not  | `bool`  | `True`  |
 
 ## Authors
 

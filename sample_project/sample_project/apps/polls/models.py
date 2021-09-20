@@ -3,13 +3,13 @@ import datetime
 from django.db import models
 from django.utils import timezone
 
+from ognajd.models import VersioningMeta
+
 
 class Question(models.Model):
-    # As of today no way to add custom Meta to model (https://code.djangoproject.com/ticket/5793)
-    # thus create own storage for configuration
-    class VersioningMeta:
-        enable = True
-        store_diff = True
+
+    class VersioningMeta(VersioningMeta):
+        save_empty_changes = False
 
     question_text = models.CharField(max_length=200)
     pub_date = models.DateTimeField('date published')
