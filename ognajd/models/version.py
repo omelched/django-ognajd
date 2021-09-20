@@ -199,8 +199,8 @@ def make_class():
         for name, method in [t for t in inspect.getmembers(VersionAttrPlaceholder, lambda m: inspect.ismethod(m))
                              if not t[0].startswith('_')]:
             ns[name] = types.MethodType(method, Version)
-            ns['__module__'] = __name__
-            ns['__qualname__'] = 'Version'
+        ns['__module__'] = __name__
+        ns['__qualname__'] = 'Version'
 
     VersionModelPlacepolder['version'] = types.new_class(
         'Version',
