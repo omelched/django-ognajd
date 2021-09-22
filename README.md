@@ -1,4 +1,4 @@
-# ognajD<sup><sup>_v0.1.4_</sup></sup>
+# ognajD<sup><sup>_v0.2.0_</sup></sup>
 
 Django app which handles ORM objects' versions.
 
@@ -11,7 +11,7 @@ work with "little-to-no" configuring and changes to Django project.
 ### Features
 **ognajd** stores objects' versions in own table, relied on `contenttypes` application.
 
-**ognajD** @ [v0.1.4](https://github.com/omelched/django-ognajd/releases/tag/v0.1.4) can:
+**ognajD** @ [v0.2.0](https://github.com/omelched/django-ognajd/releases/tag/v0.2.0) can:
 
  - catch object's save / update signals
  - store snapshot of object in DB with:
@@ -21,6 +21,7 @@ work with "little-to-no" configuring and changes to Django project.
  - object version may be serialized (currently, only JSON) as:
    - diff with previous version _(by default)_
    - raw dumps
+ - inline with versione for admin models
 
 ### Usage example
 
@@ -97,11 +98,12 @@ production due to exposed `SECRET_KEY`.
 #### Installing application
 
 Add `ognajd` to `INSTALLED_APPS` in your Django project `settings.py`.
+Make sure it is installed **before** `django.contrib.admin`. 
 
-If you installed package [the third way](#or-clone-from-repository) make sure that `</path/to/django/project/apps>`
-is added to `PYTHONPATH`. If you not sure add code below in your Django project `manage.py` before calling `main()`:
+If you installed package [the third way](#or-clone-from-repository), `</path/to/django/project/apps>`
+must be added to `PYTHONPATH`. If you not sure add code below in your Django project `manage.py` before calling `main()`:
 ```python
-  sys.path.append('</path/to/django/project/apps>')
+sys.path.append('</path/to/django/project/apps>')
 ```
 
 #### Registering models

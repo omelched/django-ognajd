@@ -49,6 +49,7 @@ class Version(models.Model):
         blank=False,
         default=uuid.uuid4,
         verbose_name=_('uuid'),
+        editable=False,
     )
     content_type = models.ForeignKey(
         ContentType,
