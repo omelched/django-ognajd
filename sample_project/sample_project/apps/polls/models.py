@@ -1,9 +1,24 @@
 import datetime
+import uuid
 
 from django.db import models
 from django.utils import timezone
 
 from ognajd.models import VersioningMeta
+
+
+class Tags(models.Model):
+    uuid = models.UUIDField(
+        primary_key=True,
+        null=False,
+        blank=False,
+        default=uuid.uuid4,
+        editable=True,
+    )
+    name = models.CharField(max_length=200)
+
+    def __str__(self):
+        return self.name
 
 
 class Question(models.Model):
@@ -13,6 +28,11 @@ class Question(models.Model):
 
     question_text = models.CharField(max_length=200)
     pub_date = models.DateTimeField('date published')
+    tags = models.ManyToManyField(
+        Tags,
+        editable=True,
+        blank=True,
+    )
 
     def __str__(self):
         return self.question_text
