@@ -145,14 +145,16 @@ class Version(models.Model):
 
         # patch dump for every diff consecutively
         for diff in diffs[1:]:
-            dump = jd.patch(dump, diff)
+            dump = jd.patch(dump, diff, marshal=True)
 
         return dump
 
     def save(self, *args, **kwargs):
 
-        latest_version = VersionModelPlacepolder['version'].objects.filter(content_type=self.content_type) \
-            .order_by('-index').first()
+        latest_version = VersionModelPlacepolder['version'].objects.filter(
+            content_type=self.content_type,
+            object_id=self.object_id,
+        ).order_by('-index').first()
         self.hash = hashlib.md5(json.dumps(self.dump).encode('utf-8')).hexdigest()
 
         # If there is at least one version
@@ -174,7 +176,7 @@ class Version(models.Model):
                 if no_changes:
                     self.dump = {}
                 else:
-                    self.dump = jd.diff(latest_version.get_version_dump(), self.dump)
+                    self.dump = jd.diff(latest_version.get_version_dump(), self.dump, marshal=True)
 
             # increment version index
             self.index = latest_version.index + 1
@@ -183,7 +185,7 @@ class Version(models.Model):
 
 
 class VersionAttrPlaceholder:
-    """Placeholder base class to store dynamicc attributes.
+    """Placeholder base class to store dynamic attributes.
 
     Attributes (mostly, methods), that will be generated at OgnajdConfig.ready() are
     bound to this class.
