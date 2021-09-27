@@ -185,7 +185,7 @@ class Version(models.Model):
 
 
 class VersionAttrPlaceholder:
-    """Placeholder base class to store dynamicc attributes.
+    """Placeholder base class to store dynamic attributes.
 
     Attributes (mostly, methods), that will be generated at OgnajdConfig.ready() are
     bound to this class.
