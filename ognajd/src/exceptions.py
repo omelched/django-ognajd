@@ -18,5 +18,10 @@
 #  along with ognjaD.  If not, see <https://www.gnu.org/licenses/>.            *
 # ******************************************************************************
 
+
+class NoDiff(Exception):
+    pass
+
+
 class VersioningError(Exception):
     pass

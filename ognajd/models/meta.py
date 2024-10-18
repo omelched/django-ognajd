@@ -19,7 +19,8 @@
 # ******************************************************************************
 
 
-class VersioningMeta(object):
+class VersioningMeta:
     enable: bool = True
     store_diff: bool = True
     save_empty_changes = True
+    serializer_fn = None

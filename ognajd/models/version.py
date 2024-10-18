@@ -28,10 +28,14 @@ from functools import cached_property
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
+from django.contrib.auth import get_user_model
 import jsondiff as jd
 
-from ..src.exceptions import VersioningError
+from ..src.exceptions import VersioningError, NoDiff
+
+
+_USER_MODEL = get_user_model()
 
 
 class Version(models.Model):
@@ -48,51 +52,63 @@ class Version(models.Model):
         null=False,
         blank=False,
         default=uuid.uuid4,
-        verbose_name=_('uuid'),
+        verbose_name=_("UUID"),
         editable=False,
+    )
+    author = models.ForeignKey(
+        _USER_MODEL,
+        on_delete=models.SET_NULL,
+        verbose_name=_("Author"),
+        null=True,
+        blank=False,
+        related_name="versions",
+    )
+    author_name = models.CharField(
+        max_length=128,
+        verbose_name=_("Author name"),
+        null=False,
+        blank=True,
+        default="",
     )
     content_type = models.ForeignKey(
         ContentType,
         on_delete=models.CASCADE,
         null=False,
         blank=False,
-        verbose_name=_('content_type'),
+        verbose_name=_("Content type"),
     )
     object_id = models.CharField(
         max_length=36,
         null=False,
         blank=False,
-        verbose_name=_('object_id'),
+        verbose_name=_("Object id"),
     )
-    ref = GenericForeignKey(
-        'content_type',
-        'object_id'
-    )
+    ref = GenericForeignKey("content_type", "object_id")
     index = models.IntegerField(
         null=False,
         blank=False,
         editable=True,
         default=0,
-        verbose_name=_('index')
+        verbose_name=_("Index"),
     )
     timestamp = models.DateTimeField(
         null=False,
         blank=False,
         editable=False,
         auto_now_add=True,
-        verbose_name=_('timestamp')
+        verbose_name=_("Timestamp"),
     )
     dump = models.JSONField(
         null=False,
         blank=False,
         editable=False,
-        verbose_name=_('dump')
+        verbose_name=_("Dump"),
     )
     hash = models.CharField(
         max_length=32,
         null=False,
         blank=False,
-        verbose_name=_('hash'),
+        verbose_name=_("Hash"),
     )
 
     objects = models.Manager()
@@ -102,10 +118,12 @@ class Version(models.Model):
         """Returns versioning metadata for related model."""
 
         versioned_model = self.content_type.model_class()
-        versioning_meta = getattr(versioned_model, 'VersioningMeta', None)
+        versioning_meta = getattr(versioned_model, "VersioningMeta", None)
 
         if not versioning_meta:
-            raise VersioningError(f'VersioningMeta is not defined for model {versioned_model}, restart required')
+            raise VersioningError(
+                f"VersioningMeta is not defined for model {versioned_model}, restart required"
+            )
 
         return versioning_meta
 
@@ -123,18 +141,21 @@ class Version(models.Model):
 
         # if model not saved — current version is unavailable
         if self._state.adding:
-            raise VersioningError(f'get_dump() can not be called at unsaved instance')
+            raise VersioningError("get_dump() can not be called at unsaved instance")
 
-        if not getattr(self.versioning_meta, 'store_diff'):
+        if not getattr(self.versioning_meta, "store_diff"):
             return self.dump
 
         # collect all diffs prior to instanced version
         diffs = tuple(
-            VersionModelPlacepolder['version']
+            VersionModelPlacepolder["version"]
             .objects.filter(
                 content_type=self.content_type,
                 index__lte=self.index,
-            ).order_by('index').values_list('dump', flat=True))
+            )
+            .order_by("index")
+            .values_list("dump", flat=True)
+        )
 
         # initial dump
         dump = diffs[0]
@@ -150,33 +171,36 @@ class Version(models.Model):
         return dump
 
     def save(self, *args, **kwargs):
-
-        latest_version = VersionModelPlacepolder['version'].objects.filter(
-            content_type=self.content_type,
-            object_id=self.object_id,
-        ).order_by('-index').first()
-        self.hash = hashlib.md5(json.dumps(self.dump).encode('utf-8')).hexdigest()
+        latest_version: Version = (
+            VersionModelPlacepolder["version"]
+            .objects.filter(
+                content_type=self.content_type,
+                object_id=self.object_id,
+            )
+            .order_by("-index")
+            .first()
+        )
+        self.hash = hashlib.md5(json.dumps(self.dump).encode("utf-8")).hexdigest()
 
         # If there is at least one version
         if latest_version:
-
             no_changes = self.hash == latest_version.hash
 
             # if there is no changes (a.k.a. equal hash)
             if no_changes:
-
                 # and we do not need to save versions with no changes — abort saving
-                if not getattr(self.versioning_meta, 'save_empty_changes'):
-                    return
+                if not getattr(self.versioning_meta, "save_empty_changes"):
+                    raise NoDiff
 
             # If we need to store diff
-            if getattr(self.versioning_meta, 'store_diff'):
-
+            if getattr(self.versioning_meta, "store_diff"):
                 # and there were no changes — do not run jsondiff.diff(...)
                 if no_changes:
                     self.dump = {}
                 else:
-                    self.dump = jd.diff(latest_version.get_version_dump(), self.dump, marshal=True)
+                    self.dump = jd.diff(
+                        latest_version.get_version_dump(), self.dump, marshal=True
+                    )
 
             # increment version index
             self.index = latest_version.index + 1
@@ -198,15 +222,31 @@ VersionModelPlacepolder = {}
 
 
 def make_class():
-    def copy_placeholder_methods(ns):
-        for name, method in [t for t in inspect.getmembers(VersionAttrPlaceholder, lambda m: inspect.ismethod(m))
-                             if not t[0].startswith('_')]:
-            ns[name] = types.MethodType(method, Version)
-        ns['__module__'] = __name__
-        ns['__qualname__'] = 'Version'
+    class Meta:
+        indexes = [
+            models.Index(
+                fields=(
+                    "content_type_id",
+                    "object_id",
+                ),
+            )
+        ]
 
-    VersionModelPlacepolder['version'] = types.new_class(
-        'Version',
+    def copy_placeholder_methods(ns):
+        for name, method in [
+            t
+            for t in inspect.getmembers(
+                VersionAttrPlaceholder, lambda m: inspect.ismethod(m)
+            )
+            if not t[0].startswith("_")
+        ]:
+            ns[name] = types.MethodType(method, Version)
+        ns["__module__"] = __name__
+        ns["__qualname__"] = "Version"
+        ns["Meta"] = Meta
+
+    VersionModelPlacepolder["version"] = types.new_class(
+        "Version",
         bases=(Version,),
-        exec_body=copy_placeholder_methods
+        exec_body=copy_placeholder_methods,
     )
