@@ -151,6 +151,7 @@ class Version(models.Model):
             VersionModelPlacepolder["version"]
             .objects.filter(
                 content_type=self.content_type,
+                object_id=self.object_id,
                 index__lte=self.index,
             )
             .order_by("index")
