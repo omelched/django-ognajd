@@ -29,13 +29,10 @@ from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.utils.translation import gettext_lazy as _
-from django.contrib.auth import get_user_model
+from django.conf import settings
 import jsondiff as jd
 
 from ..src.exceptions import VersioningError, NoDiff
-
-
-_USER_MODEL = get_user_model()
 
 
 class Version(models.Model):
@@ -56,7 +53,7 @@ class Version(models.Model):
         editable=False,
     )
     author = models.ForeignKey(
-        _USER_MODEL,
+        settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         verbose_name=_("Author"),
         null=True,

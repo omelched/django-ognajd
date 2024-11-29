@@ -48,9 +48,10 @@ class OgnajdConfig(AppConfig):
         @receiver(post_save, sender=model)
         def receiver_func(sender, instance, created, **kwargs):
             if getattr(instance, 'ognajd_ignore_version', False):
+                setattr(instance, 'ognajd_ignore_version', False)
                 return
             
-            dump = json.loads(serializer_fn([instance]))[0]["fields"]
+            dump = json.loads(serializer_fn(queryset=[instance]))[0]["fields"]
             ctx = get_context()
 
             try:
