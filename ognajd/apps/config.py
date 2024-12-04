@@ -61,7 +61,7 @@ class OgnajdConfig(AppConfig):
                 self.version_model_placeholder["version"].objects.create(
                     ref=instance,
                     dump=dump,
-                    author=ctx.get("author", None),
+                    author=author,
                     author_name=ctx.get("author_name", ""),
                 )
             except NoDiff:
