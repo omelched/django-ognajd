@@ -47,12 +47,15 @@ class OgnajdConfig(AppConfig):
 
         @receiver(post_save, sender=model)
         def receiver_func(sender, instance, created, **kwargs):
-            if getattr(instance, 'ognajd_ignore_version', False):
-                setattr(instance, 'ognajd_ignore_version', False)
+            if getattr(instance, "ognajd_ignore_version", False):
+                setattr(instance, "ognajd_ignore_version", False)
                 return
-            
+
             dump = json.loads(serializer_fn(queryset=[instance]))[0]["fields"]
             ctx = get_context()
+            author = ctx.get("author", None)
+            if not getattr(author, "is_authenticated", False):
+                author = None
 
             try:
                 self.version_model_placeholder["version"].objects.create(
